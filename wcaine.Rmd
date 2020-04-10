@@ -1,30 +1,192 @@
 ---
 title: "MATH3426 - Midterm Project"
 author: "Wilbert Caine"
-date: "4/9/2020"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, echo = TRUE, warning=FALSE}
+#change seed 20584260
+set.seed(20387844)
+data <- read.csv("Big_Five_Personality_small.csv")
+head(data)
 ```
 
-## Including Plots
+## Part I. Simple Random Sampling
 
-You can also embed plots, for example:
+### We first estimate the population mean of variable “EXT1”.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+1. Find the population mean and population total of “EXT1”.
+```{r, echo = TRUE, warning=FALSE}
+mu_ext1 <- mean(data$EXT1)
+N <- nrow(data)
+tau_ext1 <- mu_ext1*N
+print(list("population mean of “EXT1”"= mu_ext1, "population total of “EXT1”"= tau_ext1))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+2. Use simple random sampling with n=1500 to estimate the population mean and total of “EXT1” respectively. Construct 96% confidence interval for the population mean and total of “EXT1”. What are the error bounds for these estimates?
+```{r, echo = TRUE, warning=FALSE}
+n <- 15e2
+N <- nrow(data)
+alpha <- 0.04
+sample_ext1 <- sample(data$EXT1, n)
+
+ybar_ext1 <- mean(sample_ext1)
+s_square_ext1 <- var(sample_ext1)
+varhat_ybar_ext1 <- (s_square_ext1/n)*(1-n/N)
+errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
+
+tauhat_ext1 <- N*ybar_ext1
+varhat_tauhat_ext1 <- (N^2)*varhat_ybar_ext1
+errorbound_tauhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_tauhat_ext1)
+
+print(list("muhat"= ybar_ext1, "tauhat"= tauhat_ext1,
+           "error bound for muhat"= errorbound_muhat_ext1, "error bound for tauhat"= errorbound_tauhat_ext1, 
+           "CI.lower for mu"= ybar_ext1-errorbound_muhat_ext1, "CI.lower for tau"= tauhat_ext1-errorbound_tauhat_ext1,
+           "CI.upper for mu"= ybar_ext1+errorbound_muhat_ext1, "CI.upper for tau"= tauhat_ext1+errorbound_tauhat_ext1))
+```
+
+3. Repeat step 2 for 100 times and calculate the relative frequencies that the constructed confidence intervals contain the population mean and total, respectively. Are the relative frequencies close to 96%?
+```{r, echo = TRUE, eval=TRUE}
+CI_cal_mu_ext1 <- function(sample, n, N, alpha){
+  ybar_ext1 <- mean(sample)
+  varhat_ybar_ext1 <- (var(sample)/n)*(1-n/N)
+  errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
+  list("CI.lower for mu"= ybar_ext1-errorbound_muhat_ext1,
+       "CI.upper for mu"= ybar_ext1+errorbound_muhat_ext1,
+       "error bound for mu"= errorbound_muhat_ext1)
+}
+CI_cal_tau_ext1 <- function(sample, n, N, alpha){
+  ybar_ext1 <- mean(sample)
+  varhat_ybar_ext1 <- (var(sample)/n)*(1-n/N)
+  
+  tauhat_ext1 <- N*ybar_ext1
+  varhat_tauhat_ext1 <- (N^2)*varhat_ybar_ext1
+  errorbound_tauhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_tauhat_ext1)
+  list("CI.lower for tau"= tauhat_ext1-errorbound_tauhat_ext1,
+       "CI.upper for tau"= tauhat_ext1+errorbound_tauhat_ext1,
+       "error bound for tau"= errorbound_tauhat_ext1)
+}
+mrep <- 1e2
+temp_mu_ext1 <- logical(mrep)
+temp_tau_ext1 <- logical(mrep)
+for (i in 1:mrep){
+  sample_ext1 <- sample(data$EXT1, n)
+  CI_mu <- CI_cal_mu_ext1(sample_ext1,n,N,alpha)
+  temp_mu_ext1[i] <- (CI_mu[[1]]<=mu_ext1)*(CI_mu[[2]]>=mu_ext1)
+  CI_tau <- CI_cal_tau_ext1(sample_ext1,n,N,alpha)
+  temp_tau_ext1[i] <- (CI_tau[[1]]<=tau_ext1)*(CI_tau[[2]]>=tau_ext1)
+}
+print(list("relative frequencies that the constructed confidence intervals contain the population mean"= mean(temp_mu_ext1),
+           "relative frequencies that the constructed confidence intervals contain the population total"= mean(temp_tau_ext1)))
+```
+
+4. Use the sample variance from step 2, calculate the the sample size lower bound for estimating the population mean of “EXT1” with an error bound 0.015, at the significance level 0.05.
+```{r, echo = TRUE, warning=FALSE}
+alpha <-0.05
+V_ext1 <- (0.015/qnorm(1-alpha/2))^2
+sample_size_lower_ext1 <- (N*s_square_ext1)/(N*V_ext1+s_square_ext1)
+sample_size_lower_ext1
+```
+
+5. Use the sample size lower bound from step 4, random sample this number of observations and calculate the error bound at the significance level 0.05, is it close to 0.015? Repeat this process 100 times and calculate the relative frequency that the error bound is smaller than 0.015.
+```{r, echo = TRUE, warning=FALSE}
+n <- ceiling(sample_size_lower_ext1)
+alpha <- 0.05
+sample_ext1 <- sample(data$EXT1, n)
+s_square_ext1 <- var(sample_ext1)
+varhat_ybar_ext1 <- (s_square_ext1/n)*(1-n/N)
+errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
+
+mrep <- 1e2
+temp_mu_ext1 <- logical(mrep)
+for (i in 1:mrep){
+  sample_ext1 <- sample(data$EXT1, n)
+  CI_mu <- CI_cal_mu_ext1(sample_ext1,n,N,alpha)
+  temp_mu_ext1[i] <- CI_mu[[3]]<0.015
+}
+
+print(list("error bound for random sample with the sample size lower bound from step 4"= errorbound_muhat_ext1,
+           "relative frequency that the error bound is smaller than 0.015"= mean(temp_tau_ext1)))
+```
+
+### We then estimate the population proportion of answer “5” for variable “EXT2”.
+
+6. For the variable “EXT2”, what is the population proportion of answer “5”?
+```{r, echo = TRUE, warning=FALSE}
+N <- nrow(data)
+
+```
+
+7. Use simple random sampling with n=5000 to estimate the population proportion of answer “5” for variable “EXT2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
+
+
+8. Repeat step 7 for 100 times and calculate the relative frequencies that the confidence intervals contain the population proportion of answer “5” for the variable “EXT2”.
+
+
+9. Use the sample variance from step 7, calculate the sample size lower bound for estimating the population proportion of answer “5” of variable “EXT2” with an error bound of 0.02, at the significance level 0.04.
+
+
+## Part II. Stratified Simple Random Sampling
+By looking at the country code of all participants in the provided dataset, the participants come from 6 different countries
+“AU”, “CA”, “DE”, “GB”, “US”, “PH”
+In this part, we implement stratified SRS to estimate population parameters for the variables “EST1” and “EST2”.
+
+### We first estimate the population mean of variable “EST1”.
+
+1. Find the population sizes of the 6 strata and population mean of “EST1”.
+
+
+2. To estimate the population mean of “EST1”, use simple random sampling to sample 400 from ‘AU’, 600 from ‘CA’, 140 from ‘DE’, 660 from ‘GB’, 200 from ‘PH’ and 1200 from ‘US’. Compute your point estimate and error bound at significance level 0.05. Construct the confidence interval.
+
+
+3. Repeat step 2 for 100 times and calculate the relative frequencies that the constructed confidence intervals contain the population mean of “EST1”. Is the relative frequency close to 95%?
+
+
+4. Use the sample variances and allocation weights from step 2, calculate the the sample size lower bound for estimating the population mean of “EST1” with an error bound 0.02, at the significance level 0.05.
+
+
+5. Use the sample size lower bound from step 4 and allocating weights as step 2, randomly sample these numbers of observations and calculate the error bound at the significance level 0.05, is it close to 0.02? Repeat this process 100 times and calculate the relative frequency that the error bound is smaller than 0.02.
+
+
+### We then estimate the population proportion of answer “5” for variable “EST2”.
+
+6. Find population proportion of answer “5” for variable “EST2”.
+
+
+7. Use stratified simple random sampling with n=5000 and Neyman allocation to estimate the population proportion of answer “5” for the variable “EST2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
+
+
+8. Repeat step 7 for 100 times and calculate the relative frequencies that the confidence intervals contain the population proportion of answer “5” for the variable “EST2”.
+
+
+9. Use the sample variances from step 7 with Neyman allocation, calculate the sample size lower bound for estimating the population proportion of answer “5” of variable “EST2” with an error bound of 0.02, at the significance level 0.05.
+
+
+10. Repeat step 9, but use proportional allocation.
+
+
+11. Use the sample size obtained from step 10 and with proportional allocation, randomly sample this number of observations from the population by stratified SRS and calculate the error bound. Repeat the process 100 times and calculate the relative frequencies that the error bound is less than 0.02.
+
+
+## Part III. Systematic Random Sampling
+Now, we apply systematic random sampling to estimate the population mean of variable “AGR1”.
+
+### We estimate the population mean of variable “AGR1”.
+1. Find the population mean of variable “AGR1”.
+
+
+2. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use half-sample estimator to estimate the required variance.
+
+
+3. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use successive differences estimator to estimate the required variance.
+
+
+4. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use 10 repeated system samples to estimate the required variance.
+
+
+5. Use step 4 to construct 95% confidence interval of population mean of “AGR1”. Repeat 100 times and calculate the relative frequency of those intervals containing the population mean.
+
