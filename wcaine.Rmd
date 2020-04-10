@@ -43,15 +43,15 @@ tauhat_ext1 <- N*ybar_ext1
 varhat_tauhat_ext1 <- (N^2)*varhat_ybar_ext1
 errorbound_tauhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_tauhat_ext1)
 
-print(list("muhat"= ybar_ext1, "tauhat"= tauhat_ext1,
-           "error bound for muhat"= errorbound_muhat_ext1, "error bound for tauhat"= errorbound_tauhat_ext1, 
+print(list("estimate of population mean"= ybar_ext1, "estimate of population mean"= tauhat_ext1,
+           "error bound for estimate of population mean"= errorbound_muhat_ext1, "error bound for estimate of population mean"= errorbound_tauhat_ext1, 
            "CI.lower for mu"= ybar_ext1-errorbound_muhat_ext1, "CI.lower for tau"= tauhat_ext1-errorbound_tauhat_ext1,
            "CI.upper for mu"= ybar_ext1+errorbound_muhat_ext1, "CI.upper for tau"= tauhat_ext1+errorbound_tauhat_ext1))
 ```
 
 3. Repeat step 2 for 100 times and calculate the relative frequencies that the constructed confidence intervals contain the population mean and total, respectively. Are the relative frequencies close to 96%?
 ```{r, echo = TRUE, eval=TRUE}
-CI_cal_mu_ext1 <- function(sample, n, N, alpha){
+CI_cal_mu_ext1 <- function(sample, n, N){
   ybar_ext1 <- mean(sample)
   varhat_ybar_ext1 <- (var(sample)/n)*(1-n/N)
   errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
@@ -59,7 +59,7 @@ CI_cal_mu_ext1 <- function(sample, n, N, alpha){
        "CI.upper for mu"= ybar_ext1+errorbound_muhat_ext1,
        "error bound for mu"= errorbound_muhat_ext1)
 }
-CI_cal_tau_ext1 <- function(sample, n, N, alpha){
+CI_cal_tau_ext1 <- function(sample, n, N){
   ybar_ext1 <- mean(sample)
   varhat_ybar_ext1 <- (var(sample)/n)*(1-n/N)
   
@@ -75,9 +75,9 @@ temp_mu_ext1 <- logical(mrep)
 temp_tau_ext1 <- logical(mrep)
 for (i in 1:mrep){
   sample_ext1 <- sample(data$EXT1, n)
-  CI_mu <- CI_cal_mu_ext1(sample_ext1,n,N,alpha)
+  CI_mu <- CI_cal_mu_ext1(sample_ext1,n,N)
   temp_mu_ext1[i] <- (CI_mu[[1]]<=mu_ext1)*(CI_mu[[2]]>=mu_ext1)
-  CI_tau <- CI_cal_tau_ext1(sample_ext1,n,N,alpha)
+  CI_tau <- CI_cal_tau_ext1(sample_ext1,n,N)
   temp_tau_ext1[i] <- (CI_tau[[1]]<=tau_ext1)*(CI_tau[[2]]>=tau_ext1)
 }
 print(list("relative frequencies that the constructed confidence intervals contain the population mean"= mean(temp_mu_ext1),
@@ -100,17 +100,19 @@ sample_ext1 <- sample(data$EXT1, n)
 s_square_ext1 <- var(sample_ext1)
 varhat_ybar_ext1 <- (s_square_ext1/n)*(1-n/N)
 errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
+print(list("error bound for random sample with the sample size lower bound from step 4"= errorbound_muhat_ext1))
 
 mrep <- 1e2
 temp_mu_ext1 <- logical(mrep)
 for (i in 1:mrep){
   sample_ext1 <- sample(data$EXT1, n)
-  CI_mu <- CI_cal_mu_ext1(sample_ext1,n,N,alpha)
-  temp_mu_ext1[i] <- CI_mu[[3]]<0.015
+  s_square_ext1 <- var(sample_ext1)
+  varhat_ybar_ext1 <- (s_square_ext1/n)*(1-n/N)
+  errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
+  temp_mu_ext1[i] <- errorbound_muhat_ext1<0.015
 }
 
-print(list("error bound for random sample with the sample size lower bound from step 4"= errorbound_muhat_ext1,
-           "relative frequency that the error bound is smaller than 0.015"= mean(temp_tau_ext1)))
+print(list("relative frequency that the error bound is smaller than 0.015"= mean(temp_mu_ext1)))
 ```
 
 ### We then estimate the population proportion of answer “5” for variable “EXT2”.
@@ -118,17 +120,54 @@ print(list("error bound for random sample with the sample size lower bound from 
 6. For the variable “EXT2”, what is the population proportion of answer “5”?
 ```{r, echo = TRUE, warning=FALSE}
 N <- nrow(data)
-
+p_ext2.5 <- mean(data$EXT2== 5)
+print(list("population proportion of answer “5” for variable “EXT2”"= p_ext2.5))
 ```
 
 7. Use simple random sampling with n=5000 to estimate the population proportion of answer “5” for variable “EXT2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
+```{r, echo = TRUE, warning=FALSE}
+n <- 5e3
+N <- nrow(data)
+alpha <- 0.05
+sample_ext2 <- sample(data$EXT2, n)
 
+phat_ext2.5 <- mean(sample_ext2==5)
+varhat_phat_ext2.5 <- (1-n/N)*(phat_ext2.5*(1-phat_ext2.5))/(n-1)
+errorbound_phat_ext2.5 = qnorm(1-alpha/2)*sqrt(varhat_phat_ext2.5)
+
+print(list("estimate the population proportion of answer “5” for variable “EXT2”"= phat_ext2.5,
+           "error bound for estimate the population proportion"= errorbound_phat_ext2.5,
+           "CI.lower for p"= phat_ext2.5-errorbound_phat_ext2.5,
+           "CI.upper for p"= phat_ext2.5+errorbound_phat_ext2.5))
+```
 
 8. Repeat step 7 for 100 times and calculate the relative frequencies that the confidence intervals contain the population proportion of answer “5” for the variable “EXT2”.
-
+```{r, echo = TRUE, eval=TRUE}
+CI_cal_p_ext2.5 <- function(sample, n, N){
+  phat_ext2.5 <- mean(sample==5)
+  varhat_phat_ext2.5 <- (1-n/N)*(phat_ext2.5*(1-phat_ext2.5))/(n-1)
+  errorbound_phat_ext2.5 = qnorm(1-alpha/2)*sqrt(varhat_phat_ext2.5)
+  list("CI.lower for p"= phat_ext2.5-errorbound_phat_ext2.5,
+       "CI.upper for p"= phat_ext2.5+errorbound_phat_ext2.5,
+       "error bound for p"= errorbound_phat_ext2.5)
+}
+mrep <- 1e2
+temp_p_ext2.5 <- logical(mrep)
+for (i in 1:mrep){
+  sample_ext2.5 <- sample(data$EXT2, n)
+  CI_p <- CI_cal_p_ext2.5(sample_ext2.5,n,N)
+  temp_p_ext2.5[i] <- (CI_p[[1]]<=p_ext2.5)*(CI_p[[2]]>=p_ext2.5)
+}
+print(list("relative frequencies that the constructed confidence intervals contain the population proportion"= mean(temp_p_ext2.5)))
+```
 
 9. Use the sample variance from step 7, calculate the sample size lower bound for estimating the population proportion of answer “5” of variable “EXT2” with an error bound of 0.02, at the significance level 0.04.
-
+```{r, echo = TRUE, eval=TRUE}
+alpha <- 0.04
+V_ext2 <- (0.02/qnorm(1-alpha/2))^2
+sample_size_lower_ext2.5 <- (N*phat_ext2.5*(1-phat_ext2.5))/(N*V_ext2+phat_ext2.5*(1-phat_ext2.5))
+sample_size_lower_ext2.5
+```
 
 ## Part II. Stratified Simple Random Sampling
 By looking at the country code of all participants in the provided dataset, the participants come from 6 different countries
