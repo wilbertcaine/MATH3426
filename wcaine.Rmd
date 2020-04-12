@@ -111,7 +111,6 @@ for (i in 1:mrep){
   errorbound_muhat_ext1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_ext1)
   temp_mu_ext1[i] <- errorbound_muhat_ext1<0.015
 }
-
 print(list("relative frequency that the error bound is smaller than 0.015"= mean(temp_mu_ext1)))
 ```
 
@@ -135,8 +134,8 @@ phat_ext2.5 <- mean(sample_ext2==5)
 varhat_phat_ext2.5 <- (1-n/N)*(phat_ext2.5*(1-phat_ext2.5))/(n-1)
 errorbound_phat_ext2.5 = qnorm(1-alpha/2)*sqrt(varhat_phat_ext2.5)
 
-print(list("estimate the population proportion of answer “5” for variable “EXT2”"= phat_ext2.5,
-           "error bound for estimate the population proportion"= errorbound_phat_ext2.5,
+print(list("estimate of the population proportion of answer “5” for variable “EXT2”"= phat_ext2.5,
+           "error bound for estimate of the population proportion"= errorbound_phat_ext2.5,
            "CI.lower for p"= phat_ext2.5-errorbound_phat_ext2.5,
            "CI.upper for p"= phat_ext2.5+errorbound_phat_ext2.5))
 ```
@@ -177,19 +176,92 @@ In this part, we implement stratified SRS to estimate population parameters for 
 ### We first estimate the population mean of variable “EST1”.
 
 1. Find the population sizes of the 6 strata and population mean of “EST1”.
-
+```{r, echo = TRUE, eval=TRUE}
+N_country <- summary(data$country)
+mu_est1 <- mean(data$EST1)
+print(list("population size of the 6 strata"= N_country,
+           "population mean of “EST1”"= mu_est1))
+```
 
 2. To estimate the population mean of “EST1”, use simple random sampling to sample 400 from ‘AU’, 600 from ‘CA’, 140 from ‘DE’, 660 from ‘GB’, 200 from ‘PH’ and 1200 from ‘US’. Compute your point estimate and error bound at significance level 0.05. Construct the confidence interval.
+```{r, echo = TRUE, eval=TRUE}
+n_country <- c(400, 600, 140, 660, 200, 1200)
+country <- c('AU', 'CA', 'DE', 'GB', 'PH', 'US')
+alpha <- 0.05
+sample_est1 <- list()
+for (i in 1:6){
+  sample_est1[[i]] <- sample(data$EST1[data$country==country[i]], n_country[i])
+}
 
+ybar_est1 <- sapply(sample_est1, mean)
+s_square_est1 <- sapply(sample_est1, var)
+W_country <- N_country/sum(N_country)
+yst_est1 <-sum(W_country*ybar_est1)
+varhat_ybar_est1 <- sum(W_country^2*(1-n_country/N_country)*(s_square_est1/n_country))
+err_bound_muhat_est1 = qnorm(1-alpha/2)*sqrt(varhat_ybar_est1)
+print(list("estimate of population mean of “EST1”"= yst_est1,
+           "error bound for estimate of population mean"= err_bound_muhat_est1,
+           "CI.lower for mu"= yst_est1-err_bound_muhat_est1,
+           "CI.upper for mu"= yst_est1+err_bound_muhat_est1))
+```
 
 3. Repeat step 2 for 100 times and calculate the relative frequencies that the constructed confidence intervals contain the population mean of “EST1”. Is the relative frequency close to 95%?
+```{r, echo = TRUE, eval=TRUE}
+CI_cal_mu_est1 <- function(sample, n, N){
+  ybar <- sapply(sample, mean)
+  s_square <- sapply(sample, var)
+  W <- N/sum(N)
+  yst <- sum(W*ybar)
+  varhat_ybar <- sum(W^2*(1-n/N)*(s_square/n))
+  err_bound_muhat = qnorm(1-alpha/2)*sqrt(varhat_ybar)
+  list("CI.lower for mu"= yst-err_bound_muhat,
+       "CI.upper for mu"= yst+err_bound_muhat,
+       "error bound for mu"= err_bound_muhat)
+}
 
+mrep <- 1e2
+temp_mu_est1 <- logical(mrep)
+for (i in 1:mrep){
+  sample_est1 <- list()
+  for (j in 1:6){
+    sample_est1[[j]] <- sample(data$EST1[data$country==country[j]], n_country[j])
+  }
+  CI_mu <- CI_cal_mu_est1(sample_est1, n_country, N_country)
+  temp_mu_est1[i] <- (CI_mu[[1]]<=mu_est1)*(CI_mu[[2]]>=mu_est1)
+}
+print(list("relative frequencies that the constructed confidence intervals contain the population mean"= mean(temp_mu_est1)))
+```
 
 4. Use the sample variances and allocation weights from step 2, calculate the the sample size lower bound for estimating the population mean of “EST1” with an error bound 0.02, at the significance level 0.05.
-
+```{r, echo = TRUE, warning=FALSE}
+alpha <-0.05
+w_country <- n_country/sum(n_country)
+sample_size_lower_est1 <- (sum((N_country^2)*s_square_est1/w_country))/((sum(N_country)*0.02/qnorm(1-alpha/2))^2+sum(N_country*s_square_est1))
+sample_size_lower_est1
+```
 
 5. Use the sample size lower bound from step 4 and allocating weights as step 2, randomly sample these numbers of observations and calculate the error bound at the significance level 0.05, is it close to 0.02? Repeat this process 100 times and calculate the relative frequency that the error bound is smaller than 0.02.
+```{r, echo = TRUE, warning=FALSE}
+n_country_lower_est1 <- round(ceiling(sample_size_lower_est1)*w_country)
+sample_est1 <- list()
+for (i in 1:6){
+  sample_est1[[i]] <- sample(data$EST1[data$country==country[i]], n_country_lower_est1[i])
+}
+CI_mu <- CI_cal_mu_est1(sample_est1, n_country_lower_est1, N_country)
+print(list("error bound for random sample with the sample size lower bound"= CI_mu[[3]]))
 
+mrep <- 1e2
+temp <- logical(mrep)
+for (i in 1:mrep){
+  sample_est1 <- list()
+  for (j in 1:6){
+    sample_est1[[j]] <- sample(data$EST1[data$country==country[j]], n_country[j])
+  }
+  CI_mu <- CI_cal_mu_est1(sample_est1, n_country, N_country)
+  temp_mu_est1[i] <- CI_mu[[3]]<0.02
+}
+print(list("relative frequency that the error bound is smaller than 0.02"= mean(temp_mu_est1)))
+```
 
 ### We then estimate the population proportion of answer “5” for variable “EST2”.
 
