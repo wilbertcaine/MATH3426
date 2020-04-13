@@ -266,13 +266,75 @@ print(list("relative frequency that the error bound is smaller than 0.02"= mean(
 ### We then estimate the population proportion of answer “5” for variable “EST2”.
 
 6. Find population proportion of answer “5” for variable “EST2”.
-
+```{r, echo = TRUE, warning=FALSE}
+N <- nrow(data)
+p_est2.5 <- mean(data$EST2== 5)
+print(list("population proportion of answer “5” for variable “EST2”"= p_est2.5))
+```
 
 7. Use stratified simple random sampling with n=5000 and Neyman allocation to estimate the population proportion of answer “5” for the variable “EST2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
-
+```{r, echo = TRUE, warning=FALSE}
+alpha <- 0.05
+phat_country <- numeric()
+s_square_country <- numeric()
+for (i in 1:6){
+  phat_country[[i]] <- mean(data$EST2[data$country==country[i]]==5)
+  s_square_country[[i]] <- phat_country[[i]]*(1-phat_country[[i]])
+}
+w_country <- N_country*sqrt(s_square_country)/sum(N_country*sqrt(s_square_country))
+n_country <- 5000*w_country
+phat_est2.5 <- numeric()
+s_square_phat_est2.5 <- numeric()
+for (i in 1:6){
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[[i]])==5)
+  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
+}
+pst_est2.5 <- sum(N_country*phat_est2.5)/sum(N_country)
+var_pst_est2.5 <- sum((N_country^2)*(1-n_country/N_country)*s_square_phat_est2.5/(n_country-1))/((sum(N_country))^2)
+err_bound_pst_est2.5 <- qnorm(1-alpha/2)*sqrt(var_pst_est2.5)
+print(list("estimate of population proportion of answer “5”"= pst_est2.5,
+           "error bound for estimate of population proportion"= err_bound_pst_est2.5,
+           "CI.lower for p"= pst_est2.5-err_bound_pst_est2.5,
+           "CI.upper for p"= pst_est2.5+err_bound_pst_est2.5))
+```
 
 8. Repeat step 7 for 100 times and calculate the relative frequencies that the confidence intervals contain the population proportion of answer “5” for the variable “EST2”.
+```{r, echo = TRUE, warning=FALSE}
+CI_cal_p_est2 <- function(sample, n, N){
+  ybar <- sapply(sample, mean)
+  s_square <- sapply(sample, var)
+  W <- N/sum(N)
+  yst <- sum(W*ybar)
+  varhat_ybar <- sum(W^2*(1-n/N)*(s_square/n))
+  err_bound_phat = qnorm(1-alpha/2)*sqrt(varhat_ybar)
+  list("CI.lower for p"= yst-err_bound_phat,
+       "CI.upper for p"= yst+err_bound_phat,
+       "error bound for p"= err_bound_phat)
+}
 
+mrep <- 1e2
+temp_phat_est2.5 <- logical(mrep)
+for (i in 1:mrep){
+phat_country <- numeric()
+s_square_country <- numeric()
+for (i in 1:6){
+  phat_country[[i]] <- mean(data$EST2[data$country==country[i]]==5)
+  s_square_country[[i]] <- phat_country[[i]]*(1-phat_country[[i]])
+}
+w_country <- N_country*sqrt(s_square_country)/sum(N_country*sqrt(s_square_country))
+n_country <- 5000*w_country
+phat_est2.5 <- numeric()
+s_square_phat_est2.5 <- numeric()
+for (i in 1:6){
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[[i]])==5)
+  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
+}
+pst_est2.5 <- sum(N_country*phat_est2.5)/sum(N_country)
+var_pst_est2.5 <- sum((N_country^2)*(1-n_country/N_country)*s_square_phat_est2.5/(n_country-1))/((sum(N_country))^2)
+err_bound_pst_est2.5 <- qnorm(1-alpha/2)*sqrt(var_pst_est2.5)
+}
+print(list("relative frequencies that the constructed confidence intervals contain the population proportion"= mean(temp_phat_est2.5)))
+```
 
 9. Use the sample variances from step 7 with Neyman allocation, calculate the sample size lower bound for estimating the population proportion of answer “5” of variable “EST2” with an error bound of 0.02, at the significance level 0.05.
 
