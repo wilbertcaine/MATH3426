@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ```{r, echo = TRUE, warning=FALSE}
 #change seed 20584260
+#find a way to make sure that ntot=sum of rounding
 set.seed(20387844)
 data <- read.csv("Big_Five_Personality_small.csv")
 head(data)
@@ -287,7 +288,7 @@ n_country <- round(5000*w_country)
 phat_est2.5 <- numeric()
 s_square_phat_est2.5 <- numeric()
 for (i in 1:6){
-  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[[i]])==5)
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[i])==5)
   s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
 }
 pst_est2.5 <- sum(N_country*phat_est2.5)/sum(N_country)
@@ -335,7 +336,7 @@ n_country <- round(5000*w_country)
 phat_est2.5 <- numeric()
 s_square_phat_est2.5 <- numeric()
 for (i in 1:6){
-  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[[i]])==5)
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[i])==5)
   s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
 }
 sample_size_lower_est2 <- sum(N_country*s_square_phat_est2.5)/(sum(N_country)*(0.02/qnorm(1-alpha/2))^2 +sum(N_country*s_square_phat_est2.5)/sum(N_country))
@@ -343,7 +344,35 @@ sample_size_lower_est2
 ```
 
 11. Use the sample size obtained from step 10 and with proportional allocation, randomly sample this number of observations from the population by stratified SRS and calculate the error bound. Repeat the process 100 times and calculate the relative frequencies that the error bound is less than 0.02.
+```{r, echo = TRUE, warning=FALSE}
+n_country_lower_est2 <- round(ceiling(sample_size_lower_est2)*N_country/sum(N_country))
+phat_est2.5 <- numeric()
+s_square_phat_est2.5 <- numeric()
+for (i in 1:6){
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country_lower_est2[i])==5)
+  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
+}
+pst_est2.5 <- sum(N_country*phat_est2.5)/sum(N_country)
+var_pst_est2.5 <- sum((N_country^2)*(1-n_country_lower_est2/N_country)*s_square_phat_est2.5/(n_country_lower_est2-1))/(sum(N_country)^2)
+err_bound_pst_est2.5 <- qnorm(1-alpha/2)*sqrt(var_pst_est2.5)
+print(list("error bound for random sample with the sample size lower bound"= err_bound_pst_est2.5))
 
+mrep <- 1e2
+temp_p_est2 <- logical(mrep)
+for (i in 1:mrep){
+  phat_est2.5 <- numeric()
+  s_square_phat_est2.5 <- numeric()
+  for (j in 1:6) {
+    phat_est2.5[[j]] <- mean(sample(data$EST2[data$country == country[j]], n_country_lower_est2[j]) ==  5)
+    s_square_phat_est2.5[[j]] <- phat_est2.5[[j]] * (1 - phat_est2.5[[j]])
+  }
+  pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
+  var_pst_est2.5 <- sum((N_country ^ 2) * (1 - n_country_lower_est2 / N_country) * s_square_phat_est2.5 / (n_country_lower_est2 - 1) ) / (sum(N_country) ^ 2)
+  err_bound_pst_est2.5 <- qnorm(1 - alpha / 2) * sqrt(var_pst_est2.5)
+  temp_p_est2[i] <- err_bound_pst_est2.5 < 0.02
+}
+print(list("relative frequency that the error bound is smaller than 0.02"= mean(temp_p_est2)))
+```
 
 ## Part III. Systematic Random Sampling
 Now, we apply systematic random sampling to estimate the population mean of variable “AGR1”.
