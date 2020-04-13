@@ -282,7 +282,7 @@ for (i in 1:6){
   s_square_country[[i]] <- phat_country[[i]]*(1-phat_country[[i]])
 }
 w_country <- N_country*sqrt(s_square_country)/sum(N_country*sqrt(s_square_country))
-n_country <- 5000*w_country
+n_country <- round(5000*w_country)
 
 phat_est2.5 <- numeric()
 s_square_phat_est2.5 <- numeric()
@@ -291,7 +291,7 @@ for (i in 1:6){
   s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
 }
 pst_est2.5 <- sum(N_country*phat_est2.5)/sum(N_country)
-var_pst_est2.5 <- sum((N_country^2)*(1-n_country/N_country)*s_square_phat_est2.5/(n_country-1))/((sum(N_country))^2)
+var_pst_est2.5 <- sum((N_country^2)*(1-n_country/N_country)*s_square_phat_est2.5/(n_country-1))/(sum(N_country)^2)
 err_bound_pst_est2.5 <- qnorm(1-alpha/2)*sqrt(var_pst_est2.5)
 print(list("estimate of population proportion of answer “5”"= pst_est2.5,
            "error bound for estimate of population proportion"= err_bound_pst_est2.5,
@@ -306,9 +306,9 @@ temp_phat_est2.5 <- logical(mrep)
 for (i in 1:mrep) {
   phat_est2.5 <- numeric()
   s_square_phat_est2.5 <- numeric()
-  for (i in 1:6) {
-    phat_est2.5[[i]] <- mean(sample(data$EST2[data$country == country[i]], n_country[[i]]) == 5)
-    s_square_phat_est2.5[[i]] <- phat_est2.5[[i]] * (1 - phat_est2.5[[i]])
+  for (j in 1:6) {
+    phat_est2.5[[j]] <- mean(sample(data$EST2[data$country == country[j]], n_country[[j]]) == 5)
+    s_square_phat_est2.5[[j]] <- phat_est2.5[[j]] * (1 - phat_est2.5[[j]])
   }
   pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
   var_pst_est2.5 <-
@@ -318,16 +318,29 @@ for (i in 1:mrep) {
   CI.lower <- pst_est2.5-err_bound_pst_est2.5
   CI.upper <- pst_est2.5+err_bound_pst_est2.5
   temp_phat_est2.5[i] <- (CI.lower<=p_est2.5)*(CI.upper>=p_est2.5)
-  print(temp_phat_est2.5)
 }
 print(list("relative frequencies that the constructed confidence intervals contain the population proportion"= mean(temp_phat_est2.5)))
 ```
 
 9. Use the sample variances from step 7 with Neyman allocation, calculate the sample size lower bound for estimating the population proportion of answer “5” of variable “EST2” with an error bound of 0.02, at the significance level 0.05.
-
+```{r, echo = TRUE, warning=FALSE}
+sample_size_lower_est2 <- sum(N_country*sqrt(s_square_phat_est2.5))^2/((sum(N_country)*0.02/qnorm(1 - alpha / 2))^2 +sum(N_country*s_square_phat_est2.5))
+sample_size_lower_est2
+```
 
 10. Repeat step 9, but use proportional allocation.
-
+```{r, echo = TRUE, warning=FALSE}
+w_country <- N_country/sum(N_country)
+n_country <- round(5000*w_country)
+phat_est2.5 <- numeric()
+s_square_phat_est2.5 <- numeric()
+for (i in 1:6){
+  phat_est2.5[[i]] <- mean(sample(data$EST2[data$country==country[i]], n_country[[i]])==5)
+  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]]*(1-phat_est2.5[[i]])
+}
+sample_size_lower_est2 <- sum(N_country*s_square_phat_est2.5)/(sum(N_country)*(0.02/qnorm(1-alpha/2))^2 +sum(N_country*s_square_phat_est2.5)/sum(N_country))
+sample_size_lower_est2
+```
 
 11. Use the sample size obtained from step 10 and with proportional allocation, randomly sample this number of observations from the population by stratified SRS and calculate the error bound. Repeat the process 100 times and calculate the relative frequencies that the error bound is less than 0.02.
 
