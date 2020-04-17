@@ -274,7 +274,7 @@ print(list("population proportion of answer “5” for variable “EST2”"= p_
 ```
 
 7. Use stratified simple random sampling with n=5000 and Neyman allocation to estimate the population proportion of answer “5” for the variable “EST2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
-```{r, echo = TRUE, warning=FALSE}
+```{r echo=TRUE, warning=FALSE}
 alpha <- 0.05
 phat_country <- numeric()
 s_square_country <- numeric()
@@ -379,16 +379,107 @@ Now, we apply systematic random sampling to estimate the population mean of vari
 
 ### We estimate the population mean of variable “AGR1”.
 1. Find the population mean of variable “AGR1”.
-
+```{r, echo = TRUE, warning=FALSE}
+mu_agr1 <- mean(data$AGR1)
+print(list("population mean of “AGR1”"= mu_agr1))
+```
 
 2. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use half-sample estimator to estimate the required variance.
+```{r, echo = TRUE, warning=FALSE}
+sy <- function(data, sample_size, k, start_point){
+  sample = numeric()
+  for (i in 1:sample_size){
+    sample[i] <- data[start_point+(i-1)*k]
+  }
+  sample
+}
 
+N <- nrow(data)
+k <- 100
+alpha <- 0.05
+start_point <- sample(1:k, 1)
+n <- 2*as.integer(N/(2*k))
+ybar_i1 <- mean(sy(data$AGR1, n/2, 2*k, start_point))
+ybar_i2 <- mean(sy(data$AGR1, n/2, 2*k, start_point+k))
+ybar_syhs <- mean(c(ybar_i1, ybar_i2))
+s.2_ybar <- (ybar_i1-ybar_i2)^2/2
+varhat_muhat_syhs <- (1-n/N)*s.2_ybar/2
+error_bound <- qnorm(1-alpha/2)*sqrt(varhat_muhat_syhs)
+
+print(list("point estimate"= ybar_syhs,
+           "error bound"= error_bound,
+           "variance"= varhat_muhat_syhs))
+```
 
 3. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use successive differences estimator to estimate the required variance.
+```{r, echo = TRUE, warning=FALSE}
+N <- nrow(data)
+k <- 100
+alpha <- 0.05
+start_point <- sample(1:k, 1)
+n <- 2*as.integer(N/(2*k))
+sample <- sy(data$AGR1, n, k, start_point)
+sd.2 <- 0
+for (i in 1:(n-1)){
+  sd.2 <- sd.2 + (sample[i]-sample[i+1])^2/(n-1)
+}
+ybar_sysd <- mean(sample)
+varhat_muhat_sysd <- (1-n/N)*(1/2)*sd.2/n
+error_bound <- qnorm(1-alpha/2)*sqrt(varhat_muhat_sysd)
 
+print(list("point estimate"= ybar_sysd,
+           "error bound"= error_bound,
+           "variance"= varhat_muhat_sysd))
+```
 
 4. Choose k=100 and do a systematic random sampling. Calculate the point estimate and its error bound at significance level 0.05. Use 10 repeated system samples to estimate the required variance.
+```{r, echo = TRUE, warning=FALSE}
+N <- nrow(data)
+k <- 100
+alpha <- 0.05
+ns = 10
+k_prime = k*ns
+start_vec = sample(1:k_prime, ns)
+sample_mat = matrix(NA, nrow = ns, ncol = n/ns)
+for (i in 1:ns){
+  sample_mat[i,] = sy(data$AGR1, n/ns, k_prime, start_vec[i])
+}
+ybar <- rowMeans(sample_mat)
+ybar_syrs <- mean(ybar)
+s.2_ybar <- var(ybar)
+varhat_ybar_syrs <- (1-n/N)*s.2_ybar/ns
+error_bound = qnorm(1-alpha/2)*sqrt(varhat_ybar_syrs)
 
+print(list("point estimate"= ybar_syrs,
+           "error bound"= error_bound,
+           "variance"= varhat_ybar_syrs))
+```
 
 5. Use step 4 to construct 95% confidence interval of population mean of “AGR1”. Repeat 100 times and calculate the relative frequency of those intervals containing the population mean.
+```{r, echo = TRUE, eval=TRUE}
+print(list("CI.lower for mu"= ybar_syrs-error_bound,
+           "CI.upper for mu"= ybar_syrs+error_bound))
 
+CI_cal <- function(data_mat, ns, n, N){
+  ybar <- rowMeans(sample_mat)
+  ybar_syrs <- mean(ybar)
+  s.2_ybar <- var(ybar)
+  varhat_ybar_syrs <- (1-n/N)*s.2_ybar/ns
+  error_bound = qnorm(1-alpha/2)*sqrt(varhat_ybar_syrs)
+  list("CI.lower"= ybar_syrs-error_bound, 
+       "CI.upper"= ybar_syrs+error_bound,
+       "ybarbar"=ybar_syrs)
+}
+mrep <- 1e2
+temp <- logical(mrep)
+for (i in 1:mrep){
+  start_vec = sample(1:k_prime, ns)
+  sample_mat = matrix(NA, nrow = ns, ncol = n/ns)
+  for (j in 1:ns){
+    sample_mat[j,] = sy(data$AGR1, n/ns, k_prime, start_vec[j])
+  }
+  CI <- CI_cal(sample_mat, ns, n, N)
+  temp[i] <- (CI[[1]]<=mu_agr1)*(mu_agr1<=CI[[2]])
+}
+print(list("relative frequency of those intervals containing the population mean"= mean(temp)))
+```
