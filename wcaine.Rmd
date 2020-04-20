@@ -99,8 +99,8 @@ for (i in 1:mrep) {
 }
 print(
   list(
-    "relative frequencies that the constructed confidence intervals contain the population mean" = mean(temp_mu_ext1),
-    "relative frequencies that the constructed confidence intervals contain the population total" = mean(temp_tau_ext1)
+    "relative frequencies for population mean" = mean(temp_mu_ext1),
+    "relative frequencies for population total" = mean(temp_tau_ext1)
   )
 )
 ```
@@ -194,7 +194,7 @@ for (i in 1:mrep) {
 }
 print(
   list(
-    "relative frequencies that the constructed confidence intervals contain the population proportion" = mean(temp_p_ext2.5)
+    "relative frequencies for population proportion" = mean(temp_p_ext2.5)
   )
 )
 ```
@@ -283,7 +283,7 @@ for (i in 1:mrep) {
 }
 print(
   list(
-    "relative frequencies that the constructed confidence intervals contain the population mean" = mean(temp_mu_est1)
+    "relative frequencies for population mean" = mean(temp_mu_est1)
   )
 )
 ```
@@ -393,7 +393,7 @@ for (i in 1:mrep) {
 }
 print(
   list(
-    "relative frequencies that the constructed confidence intervals contain the population proportion" = mean(temp_phat_est2.5)
+    "relative frequencies for population proportion" = mean(temp_phat_est2.5)
   )
 )
 ```
@@ -594,6 +594,6 @@ for (i in 1:mrep) {
   temp[i] <- (CI[[1]] <= mu_agr1) * (mu_agr1 <= CI[[2]])
 }
 print(list(
-  "relative frequency of those intervals containing the population mean" = mean(temp)
+  "relative frequency for population mean" = mean(temp)
 ))
 ```
