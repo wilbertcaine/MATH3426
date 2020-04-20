@@ -339,23 +339,20 @@ print(list("population proportion of answer “5” for variable “EST2”" = p
 7. Use stratified simple random sampling with n=5000 and Neyman allocation to estimate the population proportion of answer “5” for the variable “EST2”. What is the confidence interval and error bound of your estimate at significance level 0.05 ?
 ```{r echo=TRUE, warning=FALSE}
 alpha <- 0.05
-phat_country <- numeric()
-s_square_country <- numeric()
+phat_country <- numeric(6)
 for (i in 1:6) {
-  phat_country[[i]] <- mean(data$EST2[data$country == country[i]] == 5)
-  s_square_country[[i]] <- phat_country[[i]] * (1 - phat_country[[i]])
+  phat_country[i] <- mean(data$EST2[data$country == country[i]] == 5)
 }
+s_square_country <- phat_country * (1 - phat_country)
 w_country <-
   N_country * sqrt(s_square_country) / sum(N_country * sqrt(s_square_country))
 n_country <- round(5000 * w_country)
-
-phat_est2.5 <- numeric()
-s_square_phat_est2.5 <- numeric()
+phat_est2.5 <- numeric(6)
 for (i in 1:6) {
-  phat_est2.5[[i]] <-
+  phat_est2.5[i] <-
     mean(sample(data$EST2[data$country == country[i]], n_country[i]) == 5)
-  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]] * (1 - phat_est2.5[[i]])
 }
+s_square_phat_est2.5 <- phat_est2.5 * (1 - phat_est2.5)
 pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
 var_pst_est2.5 <-
   sum((N_country ^ 2) * (1 - n_country / N_country) * s_square_phat_est2.5 /
@@ -376,14 +373,13 @@ print(
 mrep <- 1e2
 temp_phat_est2.5 <- logical(mrep)
 for (i in 1:mrep) {
-  phat_est2.5 <- numeric()
-  s_square_phat_est2.5 <- numeric()
+  phat_est2.5 <- numeric(6)
   for (j in 1:6) {
     phat_est2.5[[j]] <-
       mean(sample(data$EST2[data$country == country[j]], n_country[[j]]) == 5)
-    s_square_phat_est2.5[[j]] <-
-      phat_est2.5[[j]] * (1 - phat_est2.5[[j]])
   }
+  s_square_phat_est2.5 <-
+    phat_est2.5 * (1 - phat_est2.5)
   pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
   var_pst_est2.5 <-
     sum((N_country ^ 2) * (1 - n_country / N_country) * s_square_phat_est2.5 /
@@ -392,7 +388,8 @@ for (i in 1:mrep) {
     qnorm(1 - alpha / 2) * sqrt(var_pst_est2.5)
   CI.lower <- pst_est2.5 - err_bound_pst_est2.5
   CI.upper <- pst_est2.5 + err_bound_pst_est2.5
-  temp_phat_est2.5[i] <- (CI.lower <= p_est2.5) * (CI.upper >= p_est2.5)
+  temp_phat_est2.5[i] <-
+    (CI.lower <= p_est2.5) * (CI.upper >= p_est2.5)
 }
 print(
   list(
@@ -413,13 +410,12 @@ sample_size_lower_est2
 ```{r, echo = TRUE, warning=FALSE}
 w_country <- N_country / sum(N_country)
 n_country <- round(5000 * w_country)
-phat_est2.5 <- numeric()
-s_square_phat_est2.5 <- numeric()
+phat_est2.5 <- numeric(6)
 for (i in 1:6) {
-  phat_est2.5[[i]] <-
+  phat_est2.5[i] <-
     mean(sample(data$EST2[data$country == country[i]], n_country[i]) == 5)
-  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]] * (1 - phat_est2.5[[i]])
 }
+s_square_phat_est2.5 <- phat_est2.5 * (1 - phat_est2.5)
 sample_size_lower_est2 <-
   sum(N_country * s_square_phat_est2.5) / (
     sum(N_country) * (0.02 / qnorm(1 - alpha / 2)) ^ 2 + sum(N_country * s_square_phat_est2.5) /
@@ -432,14 +428,13 @@ sample_size_lower_est2
 ```{r, echo = TRUE, warning=FALSE}
 n_country_lower_est2 <-
   round(ceiling(sample_size_lower_est2) * N_country / sum(N_country))
-phat_est2.5 <- numeric()
-s_square_phat_est2.5 <- numeric()
+phat_est2.5 <- numeric(6)
 for (i in 1:6) {
-  phat_est2.5[[i]] <-
+  phat_est2.5[i] <-
     mean(sample(data$EST2[data$country == country[i]], n_country_lower_est2[i]) ==
            5)
-  s_square_phat_est2.5[[i]] <- phat_est2.5[[i]] * (1 - phat_est2.5[[i]])
 }
+s_square_phat_est2.5 <- phat_est2.5 * (1 - phat_est2.5)
 pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
 var_pst_est2.5 <-
   sum((N_country ^ 2) * (1 - n_country_lower_est2 / N_country) * s_square_phat_est2.5 /
@@ -453,14 +448,13 @@ print(
 mrep <- 1e2
 temp_p_est2 <- logical(mrep)
 for (i in 1:mrep) {
-  phat_est2.5 <- numeric()
-  s_square_phat_est2.5 <- numeric()
+  phat_est2.5 <- numeric(6)
   for (j in 1:6) {
-    phat_est2.5[[j]] <-
+    phat_est2.5[j] <-
       mean(sample(data$EST2[data$country == country[j]], n_country_lower_est2[j]) ==  5)
-    s_square_phat_est2.5[[j]] <-
-      phat_est2.5[[j]] * (1 - phat_est2.5[[j]])
   }
+  s_square_phat_est2.5 <-
+    phat_est2.5 * (1 - phat_est2.5)
   pst_est2.5 <- sum(N_country * phat_est2.5) / sum(N_country)
   var_pst_est2.5 <-
     sum((N_country ^ 2) * (1 - n_country_lower_est2 / N_country) * s_square_phat_est2.5 / (n_country_lower_est2 - 1)
