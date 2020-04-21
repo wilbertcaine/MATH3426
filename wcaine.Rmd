@@ -307,27 +307,27 @@ ceiling(sample_size_lower_est1)
 ```{r, echo = TRUE, warning=FALSE}
 temp_n_country_lower_est1 <-
   ceiling(sample_size_lower_est1) * w_country
-if (sum(temp_n_country_lower_est1)<ceiling(sample_size_lower_est1)){
-  diff_n <- ceiling(sample_size_lower_est1)-sum(temp_n_country_lower_est1)
-  max_index <- numerical(diff_n)
-  for (i in 1:diff_n){
-    max_index[i] <- 0
-    found <- FALSE
-    for (j in 1:6){
-      for (k in 1:i-1){
-        if (max_index[k]==j)
-          found <- TRUE
-      }
-      if (!found){
-        if (max_index[i] == 0){
-          max_index[i] = j
-        }
-        else if (temp_n_country_lower_est1[j]>temp_n_country_lower_est1[max_index[i]]){
-          max_index[i] = j
-        }
+if (sum(floor(temp_n_country_lower_est1)) < ceiling(sample_size_lower_est1)) {
+  diff_n <-
+    ceiling(sample_size_lower_est1) - sum(floor(temp_n_country_lower_est1))
+  max_index <- c(0, 0, 0, 0, 0, 0)
+  for (i in 1:diff_n) {
+    max <- -1
+    max_i <- -1
+    for (j in 1:6) {
+      if ((!max_index[j]) &&
+          (max < (
+            temp_n_country_lower_est1[j] - floor(temp_n_country_lower_est1[j])
+          ))) {
+        max <-
+          temp_n_country_lower_est1[j] - floor(
+            temp_n_country_lower_est1[j])
+            max_i <- j
       }
     }
-    temp_n_country_lower_est1[max_index[i]] <- temp_n_country_lower_est1[max_index[i]]+1
+    max_index[max_i] <- 1
+    temp_n_country_lower_est1[max_i] <-
+      temp_n_country_lower_est1[max_i] + 1
   }
 }
 n_country_lower_est1 <- floor(temp_n_country_lower_est1)
@@ -378,30 +378,24 @@ s_square_country <- phat_country * (1 - phat_country)
 w_country <-
   N_country * sqrt(s_square_country) / sum(N_country * sqrt(s_square_country))
 temp_n_country <- 5000 * w_country
-if (sum(temp_n_country)<5000){
-  diff_n <- 5000-sum(temp_n_country)
-  max_index <- numerical(diff_n)
-  for (i in 1:diff_n){
-    max_index[i] <- 0
-    found <- FALSE
-    for (j in 1:6){
-      for (k in 1:i-1){
-        if (max_index[k]==j)
-          found <- TRUE
-      }
-      if (!found){
-        if (max_index[i] == 0){
-          max_index[i] = j
-        }
-        else if (temp_n_country[j]>temp_n_country[max_index[i]]){
-          max_index[i] = j
-        }
+if (sum(floor(temp_n_country)) < 5000) {
+  diff_n <- 5000 - sum(floor(temp_n_country))
+  max_index <- c(0, 0, 0, 0, 0, 0)
+  for (i in 1:diff_n) {
+    max <- -1
+    max_i <- -1
+    for (j in 1:6) {
+      if ((!max_index[j]) &&
+          (max < (temp_n_country[j] - floor(temp_n_country[j])))) {
+        max <- temp_n_country[j] - floor(temp_n_country[j])
+        max_i <- j
       }
     }
-    temp_n_country[max_index[i]] <- temp_n_country[max_index[i]]+1
+    max_index[max_i] <- 1
+    temp_n_country[max_i] <- temp_n_country[max_i] + 1
   }
 }
-n_country <- round(5000 * w_country)
+n_country <- floor(temp_n_country)
 phat_est2.5 <- numeric(6)
 for (i in 1:6) {
   phat_est2.5[i] <-
@@ -460,7 +454,7 @@ print(
 sample_size_lower_est2 <-
   sum(N_country * sqrt(s_square_phat_est2.5)) ^ 2 / ((sum(N_country) * 0.02 /
                                                         qnorm(1 - alpha / 2)) ^ 2 + sum(N_country * s_square_phat_est2.5))
-sample_size_lower_est2
+ceiling(sample_size_lower_est2)
 ```
 
 10. Repeat step 9, but use proportional allocation.
@@ -478,13 +472,36 @@ sample_size_lower_est2 <-
     sum(N_country) * (0.02 / qnorm(1 - alpha / 2)) ^ 2 + sum(N_country * s_square_phat_est2.5) /
       sum(N_country)
   )
-sample_size_lower_est2
+ceiling(sample_size_lower_est2)
 ```
 
 11. Use the sample size obtained from step 10 and with proportional allocation, randomly sample this number of observations from the population by stratified SRS and calculate the error bound. Repeat the process 100 times and calculate the relative frequencies that the error bound is less than 0.02.
 ```{r, echo = TRUE, warning=FALSE}
-n_country_lower_est2 <-
-  round(ceiling(sample_size_lower_est2) * N_country / sum(N_country))
+temp_n_country_lower_est2 <-
+  ceiling(sample_size_lower_est2) * N_country / sum(N_country)
+if (sum(floor(temp_n_country_lower_est2)) < ceiling(sample_size_lower_est2)) {
+  diff_n <-
+    ceiling(sample_size_lower_est2) - sum(floor(temp_n_country_lower_est2))
+  max_index <- c(0, 0, 0, 0, 0, 0)
+  for (i in 1:diff_n) {
+    max <- -1
+    max_i <- -1
+    for (j in 1:6) {
+      if ((!max_index[j]) &&
+          (max < (
+            temp_n_country_lower_est2[j] - floor(temp_n_country_lower_est2[j])
+          ))) {
+        max <-
+          temp_n_country_lower_est2[j] - floor(temp_n_country_lower_est2[j])
+        max_i <- j
+      }
+    }
+    max_index[max_i] <- 1
+    temp_n_country_lower_est2[max_i] <-
+      temp_n_country_lower_est2[max_i] + 1
+  }
+}
+n_country_lower_est2 <- floor(temp_n_country_lower_est2)
 phat_est2.5 <- numeric(6)
 for (i in 1:6) {
   phat_est2.5[i] <-
