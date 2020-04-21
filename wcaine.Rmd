@@ -9,9 +9,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r, echo = TRUE, warning=FALSE}
-#change seed 20584260
-#find a way to make sure that ntot=sum of rounding
-set.seed(20387844)
+set.seed(20584260)
 data <- read.csv("Big_Five_Personality_small.csv")
 head(data)
 ```
@@ -73,6 +71,7 @@ CI_cal_mu_ext1 <- function(sample, n, N) {
     "error bound for mu" = errorbound_muhat_ext1
   )
 }
+
 CI_cal_tau_ext1 <- function(sample, n, N) {
   ybar_ext1 <- mean(sample)
   varhat_ybar_ext1 <- (var(sample) / n) * (1 - n / N)
@@ -86,6 +85,7 @@ CI_cal_tau_ext1 <- function(sample, n, N) {
     "error bound for tau" = errorbound_tauhat_ext1
   )
 }
+
 mrep <- 1e2
 temp_mu_ext1 <- logical(mrep)
 temp_tau_ext1 <- logical(mrep)
@@ -97,6 +97,7 @@ for (i in 1:mrep) {
   temp_tau_ext1[i] <-
     (CI_tau[[1]] <= tau_ext1) * (CI_tau[[2]] >= tau_ext1)
 }
+
 print(
   list(
     "relative frequencies for population mean" = mean(temp_mu_ext1),
@@ -123,7 +124,7 @@ varhat_ybar_ext1 <- (s_square_ext1 / n) * (1 - n / N)
 errorbound_muhat_ext1 = qnorm(1 - alpha / 2) * sqrt(varhat_ybar_ext1)
 print(
   list(
-    "error bound for random sample with the sample size lower bound from step 4" = errorbound_muhat_ext1
+    "error bound for random sample" = errorbound_muhat_ext1
   )
 )
 
@@ -185,6 +186,7 @@ CI_cal_p_ext2.5 <- function(sample, n, N) {
     "error bound for p" = errorbound_phat_ext2.5
   )
 }
+
 mrep <- 1e2
 temp_p_ext2.5 <- logical(mrep)
 for (i in 1:mrep) {
@@ -192,6 +194,7 @@ for (i in 1:mrep) {
   CI_p <- CI_cal_p_ext2.5(sample_ext2.5, n, N)
   temp_p_ext2.5[i] <- (CI_p[[1]] <= p_ext2.5) * (CI_p[[2]] >= p_ext2.5)
 }
+
 print(
   list(
     "relative frequencies for population proportion" = mean(temp_p_ext2.5)
@@ -206,7 +209,7 @@ V_ext2 <- (0.02 / qnorm(1 - alpha / 2)) ^ 2
 sample_size_lower_ext2.5 <-
   (N * phat_ext2.5 * (1 - phat_ext2.5)) / (N * V_ext2 + phat_ext2.5 * (1 -
                                                                          phat_ext2.5))
-sample_size_lower_ext2.5
+ceiling(sample_size_lower_ext2.5)
 ```
 
 ## Part II. Stratified Simple Random Sampling
@@ -244,9 +247,10 @@ yst_est1 <- sum(W_country * ybar_est1)
 varhat_ybar_est1 <-
   sum(W_country ^ 2 * (1 - n_country / N_country) * (s_square_est1 / n_country))
 err_bound_muhat_est1 = qnorm(1 - alpha / 2) * sqrt(varhat_ybar_est1)
+
 print(
   list(
-    "estimate of population mean of “EST1”" = yst_est1,
+    "estimate of population mean" = yst_est1,
     "error bound for estimate of population mean" = err_bound_muhat_est1,
     "CI.lower for mu" = yst_est1 - err_bound_muhat_est1,
     "CI.upper for mu" = yst_est1 + err_bound_muhat_est1
@@ -281,6 +285,7 @@ for (i in 1:mrep) {
   CI_mu <- CI_cal_mu_est1(sample_est1, n_country, N_country)
   temp_mu_est1[i] <- (CI_mu[[1]] <= mu_est1) * (CI_mu[[2]] >= mu_est1)
 }
+
 print(
   list(
     "relative frequencies for population mean" = mean(temp_mu_est1)
@@ -295,13 +300,37 @@ w_country <- n_country / sum(n_country)
 sample_size_lower_est1 <-
   (sum((N_country ^ 2) * s_square_est1 / w_country)) / ((sum(N_country) *
                                                            0.02 / qnorm(1 - alpha / 2)) ^ 2 + sum(N_country * s_square_est1))
-sample_size_lower_est1
+ceiling(sample_size_lower_est1)
 ```
 
 5. Use the sample size lower bound from step 4 and allocating weights as step 2, randomly sample these numbers of observations and calculate the error bound at the significance level 0.05, is it close to 0.02? Repeat this process 100 times and calculate the relative frequency that the error bound is smaller than 0.02.
 ```{r, echo = TRUE, warning=FALSE}
-n_country_lower_est1 <-
-  round(ceiling(sample_size_lower_est1) * w_country)
+temp_n_country_lower_est1 <-
+  ceiling(sample_size_lower_est1) * w_country
+if (sum(temp_n_country_lower_est1)<ceiling(sample_size_lower_est1)){
+  diff_n <- ceiling(sample_size_lower_est1)-sum(temp_n_country_lower_est1)
+  max_index <- numerical(diff_n)
+  for (i in 1:diff_n){
+    max_index[i] <- 0
+    found <- FALSE
+    for (j in 1:6){
+      for (k in 1:i-1){
+        if (max_index[k]==j)
+          found <- TRUE
+      }
+      if (!found){
+        if (max_index[i] == 0){
+          max_index[i] = j
+        }
+        else if (temp_n_country_lower_est1[j]>temp_n_country_lower_est1[max_index[i]]){
+          max_index[i] = j
+        }
+      }
+    }
+    temp_n_country_lower_est1[max_index[i]] <- temp_n_country_lower_est1[max_index[i]]+1
+  }
+}
+n_country_lower_est1 <- floor(temp_n_country_lower_est1)
 sample_est1 <- list()
 for (i in 1:6) {
   sample_est1[[i]] <-
@@ -310,7 +339,8 @@ for (i in 1:6) {
 CI_mu <-
   CI_cal_mu_est1(sample_est1, n_country_lower_est1, N_country)
 print(list("error bound for random sample with the sample size lower bound" = CI_mu[[3]]))
-
+```
+```{r, echo = TRUE, warning=FALSE}
 mrep <- 1e2
 temp <- logical(mrep)
 for (i in 1:mrep) {
@@ -322,6 +352,7 @@ for (i in 1:mrep) {
   CI_mu <- CI_cal_mu_est1(sample_est1, n_country, N_country)
   temp_mu_est1[i] <- CI_mu[[3]] < 0.02
 }
+
 print(list(
   "relative frequency that the error bound is smaller than 0.02" = mean(temp_mu_est1)
 ))
@@ -346,6 +377,30 @@ for (i in 1:6) {
 s_square_country <- phat_country * (1 - phat_country)
 w_country <-
   N_country * sqrt(s_square_country) / sum(N_country * sqrt(s_square_country))
+temp_n_country <- 5000 * w_country
+if (sum(temp_n_country)<5000){
+  diff_n <- 5000-sum(temp_n_country)
+  max_index <- numerical(diff_n)
+  for (i in 1:diff_n){
+    max_index[i] <- 0
+    found <- FALSE
+    for (j in 1:6){
+      for (k in 1:i-1){
+        if (max_index[k]==j)
+          found <- TRUE
+      }
+      if (!found){
+        if (max_index[i] == 0){
+          max_index[i] = j
+        }
+        else if (temp_n_country[j]>temp_n_country[max_index[i]]){
+          max_index[i] = j
+        }
+      }
+    }
+    temp_n_country[max_index[i]] <- temp_n_country[max_index[i]]+1
+  }
+}
 n_country <- round(5000 * w_country)
 phat_est2.5 <- numeric(6)
 for (i in 1:6) {
@@ -358,6 +413,7 @@ var_pst_est2.5 <-
   sum((N_country ^ 2) * (1 - n_country / N_country) * s_square_phat_est2.5 /
         (n_country - 1)) / (sum(N_country) ^ 2)
 err_bound_pst_est2.5 <- qnorm(1 - alpha / 2) * sqrt(var_pst_est2.5)
+
 print(
   list(
     "estimate of population proportion of answer “5”" = pst_est2.5,
@@ -375,8 +431,8 @@ temp_phat_est2.5 <- logical(mrep)
 for (i in 1:mrep) {
   phat_est2.5 <- numeric(6)
   for (j in 1:6) {
-    phat_est2.5[[j]] <-
-      mean(sample(data$EST2[data$country == country[j]], n_country[[j]]) == 5)
+    phat_est2.5[j] <-
+      mean(sample(data$EST2[data$country == country[j]], n_country[j]) == 5)
   }
   s_square_phat_est2.5 <-
     phat_est2.5 * (1 - phat_est2.5)
@@ -391,6 +447,7 @@ for (i in 1:mrep) {
   temp_phat_est2.5[i] <-
     (CI.lower <= p_est2.5) * (CI.upper >= p_est2.5)
 }
+
 print(
   list(
     "relative frequencies for population proportion" = mean(temp_phat_est2.5)
@@ -582,6 +639,7 @@ CI_cal <- function(data_mat, ns, n, N) {
     "ybarbar" = ybar_syrs
   )
 }
+
 mrep <- 1e2
 temp <- logical(mrep)
 for (i in 1:mrep) {
@@ -593,6 +651,7 @@ for (i in 1:mrep) {
   CI <- CI_cal(sample_mat, ns, n, N)
   temp[i] <- (CI[[1]] <= mu_agr1) * (mu_agr1 <= CI[[2]])
 }
+
 print(list(
   "relative frequency for population mean" = mean(temp)
 ))
