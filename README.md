@@ -1,2 +1,2 @@
-# MATH3426
+# MATH3426 Sampling
 Midterm Project
